@@ -240,6 +240,9 @@ def retrieve(question: str, k: int = 5) -> Tuple[str, List[str]]:
     Main retrieval function
     Returns: (context_text, sources_list)
     """
+    # Ensure k is integer
+    k = int(k) if k else 5
+    
     # Dynamic alpha tuning
     alpha = tune_alpha(question, base_alpha=0.55)
     

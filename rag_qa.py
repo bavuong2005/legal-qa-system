@@ -1,24 +1,43 @@
 from retriever_custom import retrieve
 from generator import generate_answer
 
-def ask_law(question, k=5):  # Reduce to 5 documents to keep context shorter
+def ask_law(question, k=5):
+    """
+    Ask a legal question and get answer with sources
+    
+    Args:
+        question: User question
+        k: Number of chunks to retrieve (default: 5)
+    
+    Returns:
+        (answer_text, sources_list)
+    """
+    import time
+    
+    # Step 1: Retrieve context
+    print("🔍 Retrieving context...")
+    t0 = time.time()
     context, sources = retrieve(question, k=k)
-    answer = generate_answer(question, context)
+    print(f"⏱️  Retrieval time: {time.time() - t0:.2f}s")
     
-    # Loại bỏ trùng lặp sources nhưng giữ thứ tự
-    unique_sources = []
-    seen = set()
-    for src in sources:
-        if src not in seen:
-            unique_sources.append(src)
-            seen.add(src)
+    # Step 2: Generate answer
+    print("🤖 Generating answer...")
+    answer, sources = generate_answer(question, context, sources)
     
-    source_str = "; ".join(unique_sources)
-    final = f"{answer.strip()}\n\nTheo: {source_str}"
-    return final, sources
+    return answer, sources
 
 if __name__ == "__main__":
     q = "người đi xe dàn hàng ba bị xử phạt như thế nào?"
-    ans, src = ask_law(q, k=5)  # Use k=5
+    ans, src = ask_law(q, k=5)
+    
+    print("\n" + "="*60)
     print("Câu hỏi:", q)
-    print("Trả lời:", ans)
+    print("="*60)
+    print("\n💡 Trả lời:")
+    print(ans)
+    
+    print("\n📚 Nguồn:")
+    for i, s in enumerate(src, 1):
+        if s:
+            print(f"  [{i}] {s}")
+    print("="*60)

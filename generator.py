@@ -1,10 +1,10 @@
 # generator.py
 # -*- coding: utf-8 -*-
 """
-Legal Answer Generator for Vietnamese Law QA (Gemini + Weaviate RAG)
-- Lấy context từ retriever (Weaviate hybrid + reranker)
+Legal Answer Generator for Vietnamese Law QA (Gemini)
+- Nhận context từ retriever
 - Gọi Gemini 2.5 Flash để sinh câu trả lời
-- Format OPTION B:
+- Format:
     1) Trả lời trực tiếp, ngắn gọn, rõ ràng
     2) Nếu có mức phạt → liệt kê theo từng loại đối tượng/phương tiện
     3) Cuối cùng luôn có dòng: "Căn cứ pháp lý: ..." (liệt kê Điều/Khoản/Điểm, không trích nguyên văn)
@@ -16,9 +16,6 @@ from typing import List, Tuple
 
 import google.generativeai as genai
 from dotenv import load_dotenv
-
-# --- retriever: dùng BM25+pyvi custom retriever ---
-from retriever_custom import retrieve  # retrieve(question: str, k: int = 5)
 
 
 # ===================== ENV & MODEL CONFIG =====================
@@ -108,28 +105,28 @@ def _build_prompt(question: str, context: str) -> str:
 
 
 # ===================== CORE FUNCTION =====================
-def generate_answer(question: str, k: int = 5, base_alpha: float = 0.55) -> Tuple[str, List[str]]:
+def generate_answer(question: str, context: str, sources: List[str] = None) -> Tuple[str, List[str]]:
     """
-    Pipeline:
-      1) Gọi retriever để lấy context + sources (alpha tự động tune)
-      2) Gọi Gemini để sinh câu trả lời theo format OPTION B
-      3) Trả về (answer_text, sources_list)
-    - sources_list: danh sách căn cứ (đã dedupe), dùng để hiển thị thêm nếu muốn.
+    Generate answer from question and context using Gemini
+    
+    Args:
+        question: User question
+        context: Retrieved context text
+        sources: List of source citations
+    
+    Returns:
+        (answer_text, sources_list)
     """
     import time
 
-    # 1) Lấy context từ retriever
-    t0 = time.time()
-    context, sources = retrieve(question, k=k)
-    print(f"⏱️  Retrieval time: {time.time() - t0:.2f}s")
-
+    # Validate context
     if not context.strip() or len(context) < 300:
         return "Trong các trích dẫn luật được cung cấp, không có đủ thông tin để trả lời chính xác câu hỏi này.", []
 
     truncated_context = _truncate_context(context, max_chars=20000)
-    sources = _dedupe_sources(sources)
+    sources = _dedupe_sources(sources or [])
 
-    # 2) Gọi Gemini sinh câu trả lời
+    # Generate answer with Gemini
     model = genai.GenerativeModel(
         MODEL_NAME,
         system_instruction=SYSTEM_INSTRUCTION,
@@ -138,27 +135,14 @@ def generate_answer(question: str, k: int = 5, base_alpha: float = 0.55) -> Tupl
     prompt = _build_prompt(question, truncated_context)
 
     try:
-        t1 = time.time()
+        t0 = time.time()
         resp = model.generate_content(prompt)
-        print(f"⏱️  Gemini API time: {time.time() - t1:.2f}s")
+        print(f"⏱️  Gemini API time: {time.time() - t0:.2f}s")
         text = (resp.text or "").strip()
         if not text:
             text = "Không tìm thấy đủ thông tin trong các văn bản luật đã được lập chỉ mục để trả lời câu hỏi này."
     except Exception as e:
         text = f"Lỗi khi gọi Gemini API: {e}"
 
-    # 3) Trả về: câu trả lời + danh sách nguồn
+    # Return: answer + sources
     return text, sources
-
-
-# ===================== QUICK TEST =====================
-if __name__ == "__main__":
-    q = "Một tài xế gây tai nạn và bỏ chạy khỏi hiện trường mà không dừng lại để cấp cứu người bị nạn. Hành vi này sẽ bị xử lý như thế nào theo luật giao thông đường bộ hiện hành?"
-    ans, cites = generate_answer(q, k=5)
-
-    print("\n================= ANSWER =================\n")
-    print(ans)
-
-    print("\n================= SOURCES ================\n")
-    for i, src in enumerate(cites, 1):
-        print(f" [{i}] {src}")
