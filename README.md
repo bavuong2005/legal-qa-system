@@ -89,6 +89,8 @@ docker-compose up -d
 ### 5. Xử lý dữ liệu & Build Index
 
 ```bash
+cd backend
+
 # Bước 1: Chunk văn bản luật
 python clean_and_split.py
 
@@ -96,11 +98,40 @@ python clean_and_split.py
 python build_index.py
 ```
 
-## 💬 Sử dụng
-
-### Chạy hệ thống QA
+### 6. Chạy ứng dụng
 
 ```bash
+# Frontend (Recommended) - Streamlit Web UI
+cd frontend
+streamlit run app.py
+
+# Hoặc CLI - Command line interface
+cd backend
+python rag_qa.py
+```
+
+## 💬 Sử dụng
+
+### Chạy Frontend (Web UI - Streamlit) - Recommended ⭐
+
+```bash
+cd frontend
+streamlit run app.py
+```
+
+**Features:**
+- ✨ Welcome screen với giới thiệu và 3 ảnh minh họa
+- 💬 Chat interface hiện đại với streaming text
+- 📚 Source attribution (xem nguồn pháp luật tham khảo)
+- ⏱️ Performance metrics (retrieval + generation time)
+- 💡 Sample questions để bắt đầu nhanh
+- 🎚️ Settings sidebar: điều chỉnh số chunks, xóa lịch sử
+- 📊 Hiển thị metrics: thời gian xử lý, số chunks sử dụng
+
+### Chạy CLI (Command Line)
+
+```bash
+cd backend
 python rag_qa.py
 ```
 
@@ -135,6 +166,7 @@ print(answer)
 ### Test Retriever
 
 ```bash
+cd backend
 python test_retriever.py
 ```
 
@@ -196,25 +228,42 @@ python test_retriever.py
 ✅ **Cross-Encoder Reranking**: Độ chính xác cao  
 ✅ **Citation Tracking**: Ghi rõ căn cứ pháp lý  
 ✅ **Gemini Integration**: Vietnamese legal answer generation  
+✅ **Modern Web UI**: Streamlit chat interface với streaming
+✅ **Source Attribution**: Xem nguồn tham khảo trong Expander
+✅ **Performance Metrics**: Hiển thị thời gian retrieval/generation
+✅ **Sample Questions**: Gợi ý câu hỏi mẫu
+✅ **Adjustable Settings**: Điều chỉnh số chunks, xóa lịch sử
 
 ## 📂 Cấu trúc Project
 
 ```
-QA_luat/
-├── clean_and_split.py          # Data processing & chunking
-├── build_index.py               # Weaviate indexing
-├── retriever_custom.py          # Hybrid retrieval + reranking
-├── generator.py                 # Gemini answer generation
-├── rag_qa.py                    # Main QA pipeline
-├── test_retriever.py           # Test retrieval
-├── docker-compose.yml          # Weaviate setup
-├── requirements.txt            # Python dependencies
-├── .env                        # API keys (create this)
+legal-qa-system/
+├── frontend/                   # Streamlit Web UI
+│   ├── app.py                 # Main chat interface
+│   ├── assets/                # Hình ảnh minh họa
+│   │   ├── law.png
+│   │   ├── traffic.png
+│   │   └── legal.png
+│   └── bm25_index.pkl         # BM25 index cache
+│
+├── backend/                   # RAG Pipeline
+│   ├── clean_and_split.py     # Data processing & chunking
+│   ├── build_index.py         # Weaviate indexing
+│   ├── retriever_custom.py    # Hybrid retrieval + reranking
+│   ├── generator.py           # Gemini answer generation
+│   ├── rag_qa.py              # Main QA pipeline
+│   └── test_retriever.py      # Test retrieval
+│
+├── docker/                    # Docker setup
+│   └── docker-compose.yml     # Weaviate container
+│
 ├── data/
-│   ├── raw/                    # Raw law text files
-│   └── processed/              # Processed JSON chunks
-├── bm25_index.pkl             # BM25 index cache
-└── index/                      # (Optional) Other indexes
+│   ├── raw/                   # Raw law text files
+│   └── processed/             # Processed JSON chunks
+│
+├── requirements.txt           # Python dependencies
+├── .env                       # API keys (create this)
+└── README.md
 ```
 
 ## 🔧 Configuration
