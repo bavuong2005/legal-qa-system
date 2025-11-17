@@ -71,10 +71,13 @@ Các đoạn luật (trích từ văn bản pháp luật, bạn PHẢI bám sát
 
 Yêu cầu:
 - Trước hết hãy trả lời trực tiếp câu hỏi, trình bày mạch lạc, dễ hiểu.
+- Nếu câu hỏi có dạng trắc nghiệm (A/B/C/D hoặc 1/2/3/4), bạn PHẢI trả lời theo đúng mẫu:
+   "Đáp án đúng: <chỉ 1 ký tự A/B/C/D>"
+  và sau đó giải thích ngắn 1–2 câu.
 - Nếu câu hỏi liên quan đến mức phạt, trách nhiệm, nghĩa vụ thì hãy liệt kê rõ theo từng trường hợp liên quan trong context (ví dụ: theo loại xe, đối tượng vi phạm, hành vi...).
 - Ở cuối câu trả lời, thêm một dòng riêng:
   "Căn cứ pháp lý: ..." 
-  và liệt kê các căn cứ pháp lý dựa trên thông tin trong dòng [Căn cứ: ...] ở đầu mỗi đoạn luật.
+  và liệt kê gạch đầu dòng các căn cứ pháp lý dựa trên thông tin trong dòng [Căn cứ: ...] ở đầu mỗi đoạn luật.
   Ví dụ: nếu thấy "[Căn cứ: khoản 4 Điều 2 Luật số 35/2024/QH15]" thì ghi "khoản 4 Điều 2 Luật số 35/2024/QH15".
 - Không được viện dẫn bất kỳ căn cứ nào không có trong các đoạn luật ở trên.
 """
@@ -143,6 +146,40 @@ def generate_answer(question: str, context: str, sources: List[str] = None) -> T
             text = "Không tìm thấy đủ thông tin trong các văn bản luật đã được lập chỉ mục để trả lời câu hỏi này."
     except Exception as e:
         text = f"Lỗi khi gọi Gemini API: {e}"
+    # # =========================
+    # # FIX format "Căn cứ pháp lý" (Đã sửa)
+    # # =========================
+    # m = re.search(r"Căn cứ pháp lý:\s*(.+)", text, flags=re.IGNORECASE | re.DOTALL)
+    # if m:
+    #     raw = m.group(1).strip() # Lấy toàn bộ phần căn cứ bị hỏng
 
+    #     # Bước 1: Dọn dẹp, loại bỏ các dấu gạch đầu dòng và xuống dòng không cần thiết
+    #     # Biến tất cả thành một chuỗi duy nhất, ngăn cách bằng dấu cách
+    #     cleaned_raw = re.sub(r"[\n-]", " ", raw)
+    #     cleaned_raw = re.sub(r"\s+", " ", cleaned_raw).strip()
+        
+    #     # cleaned_raw bây giờ sẽ là:
+    #     # "điểm g khoản 2 Điều 7 Nghị định số 168/2024/NĐ-CP khoản 1 Điều 33 Luật số 36/2024/QH15 điểm a ..."
+
+    #     # Bước 2: Tách chuỗi đã dọn dẹp dựa trên các từ khóa bắt đầu một căn cứ
+    #     # (sử dụng positive lookahead '(?=...)' để giữ lại từ khóa)
+    #     refs = re.split(r"(?=(điểm|khoản|Điều)\s)", cleaned_raw, flags=re.IGNORECASE)
+
+    #     # refs bâyB giờ sẽ là:
+    #     # ['', 'điểm g khoản 2 Điều 7 Nghị định số 168/2024/NĐ-CP ', 'khoản 1 Điều 33 Luật số 36/2024/QH15 ', ...]
+
+    #     # Bước 3: Định dạng lại danh sách
+    #     formatted_refs = []
+    #     for r in refs:
+    #         cleaned_ref = r.strip()
+    #         if cleaned_ref: # Bỏ qua các chuỗi rỗng
+    #             # Chuẩn hóa (viết thường chữ cái đầu)
+    #             cleaned_ref = cleaned_ref[0].lower() + cleaned_ref[1:]
+    #             formatted_refs.append(f"- {cleaned_ref}")
+
+    #     # Bước 4: Thay thế đoạn text cũ bằng đoạn đã định dạng
+    #     if formatted_refs:
+    #         formatted = "Căn cứ pháp lý:\n" + "\n".join(formatted_refs)
+    #         text = re.sub(r"Căn cứ pháp lý:.*", formatted, text, flags=re.IGNORECASE | re.DOTALL)
     # Return: answer + sources
     return text, sources

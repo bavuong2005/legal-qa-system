@@ -16,11 +16,16 @@ from tqdm import tqdm
 from pathlib import Path
 
 # ========================= CONFIG =========================
-DATA_DIR = Path("data/processed")
+from pathlib import Path
+
+# Tìm thư mục project gốc (QA-LAW-SYSTEM)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+DATA_DIR = PROJECT_ROOT / "data" / "processed"
 COLLECTION_NAME = "LawChunks"
 
-# Embedding model (từ evaluation: gte-multilingual-base tốt nhất)
 EMB_MODEL = "Alibaba-NLP/gte-multilingual-base"
+
 
 # ========================= INIT =========================
 print("🔌 Connecting to Weaviate...")

@@ -1,5 +1,5 @@
-from retriever_custom import retrieve
-from generator import generate_answer
+from backend.retriever_custom import retrieve
+from backend.generator import generate_answer
 
 def ask_law(question, k=5):
     """

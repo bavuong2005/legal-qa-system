@@ -55,11 +55,11 @@ def tune_alpha(query: str, base_alpha: float = 0.55) -> float:
 
 # ---------------- LOAD MODELS ----------------
 print("🔹 Loading embedding model...")
-emb_model = SentenceTransformer("Alibaba-NLP/gte-multilingual-base", device="cpu", trust_remote_code=True)
+emb_model = SentenceTransformer("Alibaba-NLP/gte-multilingual-base", device="cuda", trust_remote_code=True)
 print("✓ Embedding model loaded")
 
 print("🔹 Loading reranker model...")
-reranker = CrossEncoder("BAAI/bge-reranker-v2-m3", device="cpu")
+reranker = CrossEncoder("BAAI/bge-reranker-v2-m3", device="cuda")
 print("✓ Reranker loaded")
 
 print("🌐 Connecting to Weaviate...")

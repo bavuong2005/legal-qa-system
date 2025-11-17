@@ -4,7 +4,7 @@
 Test script for retriever
 """
 
-from retriever_custom import retrieve
+from backend.retriever_custom import retrieve
 
 
 
