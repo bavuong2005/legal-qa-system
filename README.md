@@ -1,4 +1,4 @@
-# Vietnamese Law QA System 🇻🇳
+# RoadLawQA - Vietnamese Law QA System
 
 Hệ thống hỏi đáp pháp luật giao thông đường bộ Việt Nam sử dụng RAG (Retrieval-Augmented Generation).
 
