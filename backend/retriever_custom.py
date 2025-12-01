@@ -63,7 +63,7 @@ reranker = CrossEncoder("BAAI/bge-reranker-v2-m3", device="cuda")
 print("✓ Reranker loaded")
 
 print("🌐 Connecting to Weaviate...")
-client = weaviate.connect_to_local()
+client = weaviate.connect_to_local(skip_init_checks=True)
 weaviate_collection = client.collections.get("LawChunks")
 print("✓ Connected to Weaviate")
 
@@ -235,10 +235,14 @@ def rerank(query: str, candidates: List[Dict], final_k: int) -> List[Dict]:
     return candidates[:final_k]
 
 # ---------------- MAIN RETRIEVE FUNCTION ----------------
-def retrieve(question: str, k: int = 5) -> Tuple[str, List[str]]:
+# ---------------- MAIN RETRIEVE FUNCTION ----------------
+def retrieve(question: str, k: int = 5, raw: bool = False):
     """
     Main retrieval function
-    Returns: (context_text, sources_list)
+    Args:
+        question: Câu hỏi
+        k: Số lượng chunk cần lấy
+        raw: Nếu True trả về list dict (cho Quiz), nếu False trả về string (cho Chatbot)
     """
     # Ensure k is integer
     k = int(k) if k else 5
@@ -246,14 +250,18 @@ def retrieve(question: str, k: int = 5) -> Tuple[str, List[str]]:
     # Dynamic alpha tuning
     alpha = tune_alpha(question, base_alpha=0.55)
     
-    # Hybrid search: lấy nhiều candidates để rerank có hiệu quả
-    num_candidates = min(k * CANDIDATE_MULTIPLIER, 30)  # Max 30 candidates
+    # Hybrid search
+    num_candidates = min(k * CANDIDATE_MULTIPLIER, 30)
     candidates = retrieve_hybrid(question, alpha, num_candidates)
     
-    # Rerank về k chunks cuối cùng
+    # Rerank
     top_results = rerank(question, candidates, k)
     
-    # Format context for LLM (giống retriever.py)
+    # --- MỚI: Trả về dữ liệu thô nếu cần (Cho Quiz) ---
+    if raw:
+        return top_results
+
+    # --- CŨ: Format thành text để cho Chatbot ---
     contexts = []
     sources = []
     
@@ -278,21 +286,16 @@ def retrieve(question: str, k: int = 5) -> Tuple[str, List[str]]:
             lines.append(f"[Căn cứ: {display_citation}]")
         
         # Luật / Chương / Mục / Điều
-        if law:
-            lines.append(law)
-        if chapter:
-            lines.append(chapter)
-        if section:
-            lines.append(section)
+        if law: lines.append(law)
+        if chapter: lines.append(chapter)
+        if section: lines.append(section)
         if article_no or article_title:
             art_line = f"Điều {article_no}".strip()
-            if article_title:
-                art_line += f". {article_title}"
+            if article_title: art_line += f". {article_title}"
             lines.append(art_line)
         
         # Phân biệt: có Điểm hay không
         if point:
-            # LEAF = ĐIỂM: cần cả clause_head + text điểm
             if clause_no and clause_head:
                 lines.append(f"Khoản {clause_no}. {clause_head}")
             elif clause_no:
@@ -300,14 +303,10 @@ def retrieve(question: str, k: int = 5) -> Tuple[str, List[str]]:
             
             lines.append(f"Điểm {point})")
             
-            if body_for_ctx:
-                lines.append(body_for_ctx)
+            if body_for_ctx: lines.append(body_for_ctx)
         else:
-            # LEAF = KHOẢN: chỉ label + text
-            if clause_no:
-                lines.append(f"Khoản {clause_no}")
-            if body_for_ctx:
-                lines.append(body_for_ctx)
+            if clause_no: lines.append(f"Khoản {clause_no}")
+            if body_for_ctx: lines.append(body_for_ctx)
         
         ctx_chunk = "\n".join(lines).strip()
         if ctx_chunk:
@@ -319,7 +318,32 @@ def retrieve(question: str, k: int = 5) -> Tuple[str, List[str]]:
     
     context = "\n\n".join(contexts)
     return context, sources
-
+def retrieve_random(k: int = 10):
+    """
+    Lấy ngẫu nhiên k đoạn văn bản luật từ Database.
+    Kỹ thuật: Tạo một vector ngẫu nhiên và tìm kiếm theo vector đó.
+    """
+    # Model gte-multilingual-base có chiều vector là 768
+    # Tạo một vector ngẫu nhiên kích thước 768
+    import numpy as np
+    random_vector = np.random.rand(768).tolist()
+    
+    # Query Weaviate bằng vector ngẫu nhiên này
+    # Nó sẽ trả về các đoạn văn bản có vector gần nhất (ngẫu nhiên)
+    resp = weaviate_collection.query.near_vector(
+        near_vector=random_vector,
+        limit=k,
+        return_properties=["enriched_text", "display_citation"]
+    )
+    
+    results = []
+    for obj in resp.objects:
+        results.append({
+            "props": obj.properties,
+            "score": 0.0 # Score không quan trọng khi random
+        })
+        
+    return results
 # ---------------- CLEANUP ----------------
 import atexit
 
@@ -332,6 +356,4 @@ def cleanup():
         pass
 
 atexit.register(cleanup)
-
-
 

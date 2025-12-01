@@ -35,7 +35,7 @@ GEN_CONFIG = {
     "top_k": 40,
     "candidate_count": 1,
 }
-
+global_model = genai.GenerativeModel(MODEL_NAME)
 
 # ===================== PROMPTS (OPTION B) =====================
 SYSTEM_INSTRUCTION = """
@@ -130,7 +130,7 @@ def generate_answer(question: str, context: str, sources: List[str] = None) -> T
     sources = _dedupe_sources(sources or [])
 
     # Generate answer with Gemini
-    model = genai.GenerativeModel(
+    qa_model = genai.GenerativeModel(
         MODEL_NAME,
         system_instruction=SYSTEM_INSTRUCTION,
         generation_config=GEN_CONFIG,
@@ -139,7 +139,7 @@ def generate_answer(question: str, context: str, sources: List[str] = None) -> T
 
     try:
         t0 = time.time()
-        resp = model.generate_content(prompt)
+        resp = qa_model.generate_content(prompt)
         print(f"⏱️  Gemini API time: {time.time() - t0:.2f}s")
         text = (resp.text or "").strip()
         if not text:
@@ -183,3 +183,32 @@ def generate_answer(question: str, context: str, sources: List[str] = None) -> T
     #         text = re.sub(r"Căn cứ pháp lý:.*", formatted, text, flags=re.IGNORECASE | re.DOTALL)
     # Return: answer + sources
     return text, sources
+# --- Phần thêm mới cho Quiz ---
+import json
+from backend.prompts import QUIZ_PROMPT
+def generate_quiz(context_text: str, num_questions: int = 5):
+    """
+    Sinh câu hỏi trắc nghiệm từ context.
+    Sử dụng 'global_model' đã khai báo ở trên.
+    """
+    try:
+        # 1. Tạo prompt từ template
+        final_prompt = QUIZ_PROMPT.format(
+            num_questions=num_questions,
+            context=context_text
+        )
+
+        # 2. Gọi Gemini (Sử dụng global_model)
+        # Ép kiểu trả về JSON để code dễ xử lý
+        response = global_model.generate_content(
+            final_prompt,
+            generation_config={"response_mime_type": "application/json"}
+        )
+        
+        # 3. Parse JSON
+        quiz_data = json.loads(response.text)
+        return quiz_data
+
+    except Exception as e:
+        print(f"❌ Lỗi khi sinh Quiz: {e}")
+        return []
