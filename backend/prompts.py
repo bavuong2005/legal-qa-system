@@ -7,7 +7,8 @@ Yêu cầu bắt buộc về định dạng JSON Output:
 2. Mỗi câu hỏi có 4 đáp án (A, B, C, D).
 3. Chỉ có 1 đáp án đúng.
 4. Trường "correct_answer" chỉ chứa chữ cái (ví dụ: "A").
-5. Trường "explanation" giải thích ngắn gọn tại sao đúng.
+5. Trường "explanation" giải thích ngắn gọn tại sao đúng. Nếu liên quan đến mức phạt hoặc nghĩa vụ:- Liệt kê rõ theo từng loại đối tượng/phương tiện (nếu có), - Ghi rõ khoảng tiền phạt, hình thức xử phạt (nếu context có).
+6. Trường "citation": PHẢI trích xuất nguyên văn nguồn pháp lý được cung cấp ở đầu mỗi đoạn văn bản (nằm trong dấu []). Ví dụ: "Khoản 1 Điều 5 Nghị định 100...". Tuyệt đối không để null.
 
 Cấu trúc mẫu:
 [
@@ -21,7 +22,7 @@ Cấu trúc mẫu:
     }},
     "correct_answer": "B",
     "explanation": "Căn cứ theo Nghị định 100/2019/NĐ-CP...",
-    "citation": "Điều 6, Khoản 4"
+    "citation": "Điều 6, Khoản 4 luật số 36/2024/QH15"
   }}
 ]
 

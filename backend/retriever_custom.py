@@ -59,7 +59,7 @@ emb_model = SentenceTransformer("Alibaba-NLP/gte-multilingual-base", device="cud
 print("✓ Embedding model loaded")
 
 print("🔹 Loading reranker model...")
-reranker = CrossEncoder("BAAI/bge-reranker-v2-m3", device="cuda")
+reranker = CrossEncoder("BAAI/bge-reranker-v2-m3", device="cpu")
 print("✓ Reranker loaded")
 
 print("🌐 Connecting to Weaviate...")

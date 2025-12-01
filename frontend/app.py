@@ -342,121 +342,125 @@ with tab_chat:
 # TAB 2: QUIZ GENERATOR (CÓ RANDOM MODE)
 # ==========================================
 with tab_quiz:
-    st.markdown("### Luyện Kiến Thức Giao Thông ")
-    
-    # 1. Chọn chế độ
-    quiz_mode = st.radio("Chọn chế độ:", ["Theo chủ đề", "Ngẫu nhiên (Bộ 10 câu hỏi)"], horizontal=True)
-    
-    if quiz_mode == " Theo chủ đề":
-        c_q1, c_q2 = st.columns([3, 1])
-        with c_q1:
-            topic_input = st.text_input("Nhập chủ đề:", placeholder="Ví dụ: Nồng độ cồn...", value=st.session_state.quiz_topic)
-        with c_q2:
-            num_q = st.number_input("Số câu:", 1, 10, 3)
-        btn_label = " Tạo Bộ Câu Hỏi"
-    else:
-        # Chế độ Random
-        st.info("Hệ thống sẽ chọn ngẫu nhiên 10 câu hỏi từ toàn bộ bộ luật để bạn thử sức!")
-        topic_input = "Random" # Giá trị giả
-        num_q = 10
-        btn_label = "Tạo bộ câu hỏi mới"
+	st.markdown("### Luyện Kiến Thức Giao Thông ")
+	
+	# 1. Chọn chế độ
+	quiz_mode = st.radio("Chọn chế độ:", ["Theo chủ đề", "Ngẫu nhiên (Bộ 10 câu hỏi)"], horizontal=True)
+	
+	if quiz_mode == " Theo chủ đề":
+		c_q1, c_q2 = st.columns([3, 1])
+		with c_q1:
+			topic_input = st.text_input("Nhập chủ đề:", placeholder="Ví dụ: Nồng độ cồn...", value=st.session_state.quiz_topic)
+		with c_q2:
+			num_q = st.number_input("Số câu:", 1, 10, 3)
+		btn_label = " Tạo Bộ Câu Hỏi"
+	else:
+		# Chế độ Random
+		st.info("Hệ thống sẽ chọn ngẫu nhiên 10 câu hỏi từ toàn bộ bộ luật để bạn thử sức!")
+		topic_input = "Random" # Giá trị giả
+		num_q = 10
+		btn_label = "Tạo bộ câu hỏi mới"
 
-    # Nút bấm sinh câu hỏi
-    if st.button(btn_label, use_container_width=True):
-        # Reset state
-        st.session_state.quiz_topic = topic_input
-        st.session_state.quiz_data = None
-        
-        # Kiểm tra input nếu ở chế độ Topic
-        if quiz_mode == " Theo chủ đề" and not topic_input:
-            st.warning("Vui lòng nhập chủ đề!")
-        else:
-            with st.status("Đang khởi tạo đề thi...", expanded=True) as status:
-                try:
-                    # --- LOGIC TÌM KIẾM ---
-                    if quiz_mode == " Theo chủ đề":
-                        status.write(f" Đang tìm luật về '{topic_input}'...")
-                        relevant_chunks = retrieve(topic_input, k=5, raw=True)
-                    else:
-                        # Gọi hàm Random mới viết ở Backend
-                        status.write(" Đang chọn ngẫu nhiên các điều luật...")
-                        # Import hàm mới ngay tại đây để tránh lỗi nếu chưa restart server
-                        from backend.retriever_custom import retrieve_random
-                        # Lấy 12 chunk để trừ hao chunk ngắn, chọn ra 10
-                        relevant_chunks = retrieve_random(k=12)
+	# Nút bấm sinh câu hỏi
+	if st.button(btn_label, use_container_width=True):
+		# Reset state
+		st.session_state.quiz_topic = topic_input
+		st.session_state.quiz_data = None
+		
+		# Kiểm tra input nếu ở chế độ Topic
+		if quiz_mode == " Theo chủ đề" and not topic_input:
+			st.warning("Vui lòng nhập chủ đề!")
+		else:
+			with st.status("Đang khởi tạo đề thi...", expanded=True) as status:
+				try:
+					# --- LOGIC TÌM KIẾM ---
+					if quiz_mode == " Theo chủ đề":
+						status.write(f" Đang tìm luật về '{topic_input}'...")
+						relevant_chunks = retrieve(topic_input, k=5, raw=True)
+					else:
+						# Gọi hàm Random mới viết ở Backend
+						status.write(" Đang chọn ngẫu nhiên các điều luật...")
+						# Import hàm mới ngay tại đây để tránh lỗi nếu chưa restart server
+						from backend.retriever_custom import retrieve_random
+						# Lấy 12 chunk để trừ hao chunk ngắn, chọn ra 10
+						relevant_chunks = retrieve_random(k=12)
 
-                    if not relevant_chunks:
-                        st.error("Không tìm thấy dữ liệu.")
-                        status.update(label="Thất bại", state="error")
-                    else:
-                        status.write(" Đang phân tích và soạn câu hỏi...")
-                        context_list = []
-                        for item in relevant_chunks:
-                            if isinstance(item, dict):
-                                props = item.get('props', {})
-                                text = props.get('enriched_text', '')
-                                if text: context_list.append(text)
-                        
-                        full_ctx = "\n\n".join(context_list)
-                        
-                        # Gọi Gemini sinh Quiz
-                        # Lưu ý: Với 10 câu, Gemini có thể mất tầm 10-15s
-                        new_quiz = generate_quiz(full_ctx, num_questions=num_q)
-                        
-                        if not new_quiz:
-                             st.error("AI không tạo được câu hỏi nào từ dữ liệu này. Hãy thử lại.")
-                             status.update(label="Lỗi sinh câu hỏi", state="error")
-                        else:
-                            # --- LƯU VÀO SESSION STATE ---
-                            st.session_state.quiz_data = new_quiz
-                            status.update(label="✅ Hoàn tất!", state="complete", expanded=False)
-                        
-                except Exception as e:
-                    st.error(f"Lỗi: {str(e)}")
-                    status.update(label="Lỗi hệ thống", state="error")
+					if not relevant_chunks:
+						st.error("Không tìm thấy dữ liệu.")
+						status.update(label="Thất bại", state="error")
+					else:
+						status.write(" Đang phân tích và soạn câu hỏi...")
+						context_list = []
+						for item in relevant_chunks:
+							if isinstance(item, dict):
+								props = item.get('props', {})
+								text = props.get('enriched_text', '')
+								source = props.get('display_citation', 'Nguồn không xác định')
+								if text: 
+									full_chunk = f"[Nguồn: {source}]\nNội dung: {text}"
+									context_list.append(full_chunk)
 
-    st.markdown("---")
+						
+						full_ctx = "\n\n".join(context_list)
+						
+						# Gọi Gemini sinh Quiz
+						# Lưu ý: Với 10 câu, Gemini có thể mất tầm 10-15s
+						new_quiz = generate_quiz(full_ctx, num_questions=num_q)
+						
+						if not new_quiz:
+							 st.error("AI không tạo được câu hỏi nào từ dữ liệu này. Hãy thử lại.")
+							 status.update(label="Lỗi sinh câu hỏi", state="error")
+						else:
+							# --- LƯU VÀO SESSION STATE ---
+							st.session_state.quiz_data = new_quiz
+							status.update(label="✅ Hoàn tất!", state="complete", expanded=False)
+						
+				except Exception as e:
+					st.error(f"Lỗi: {str(e)}")
+					status.update(label="Lỗi hệ thống", state="error")
 
-    # --- PHẦN HIỂN THỊ CÂU HỎI (Logic cũ) ---
-    if st.session_state.quiz_data:
-        # Tính điểm
-        score = 0
-        total = len(st.session_state.quiz_data)
-        
-        # Thanh tiến độ làm bài (Optional visual)
-        st.caption(f" Bộ câu hỏi gồm {total} câu .")
+	st.markdown("---")
 
-        for i, q in enumerate(st.session_state.quiz_data, 1):
-            with st.container():
-                st.markdown(f"""
-                <div class="quiz-card">
-                    <div class="quiz-question">Câu {i}: {q.get('question')}</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                options = q.get('options', {})
-                opt_list = []
-                if isinstance(options, dict):
-                     opt_list = [f"{k}. {v}" for k, v in options.items()]
-                
-                # Unique key mỗi lần sinh đề mới -> reset lựa chọn cũ
-                # Dùng timestamp hoặc hash của câu hỏi để làm key
-                unique_key = f"q_{hash(q.get('question'))}"
-                
-                user_choice = st.radio(f"Chọn đáp án câu {i}:", opt_list, key=unique_key, index=None)
-                
-                if user_choice:
-                    selected_opt = user_choice.split(".")[0].strip().upper()
-                    correct_opt = q.get('correct_answer', '').strip().upper()
-                    
-                    if selected_opt == correct_opt:
-                        st.markdown(f"<div class='right-msg'>✅ Chính xác.</div>", unsafe_allow_html=True)
-                        score += 1
-                    else:
-                        st.markdown(f"<div class='wrong-msg'>❌ Sai. Đáp án là {correct_opt}</div>", unsafe_allow_html=True)
-                    
-                    with st.expander(" Xem giải thích"):
-                        st.info(f"{q.get('explanation')}")
-                        st.caption(f"📚 {q.get('citation')}")
-                
-                st.markdown("---")
+	# --- PHẦN HIỂN THỊ CÂU HỎI (Logic cũ) ---
+	if st.session_state.quiz_data:
+		# Tính điểm
+		score = 0
+		total = len(st.session_state.quiz_data)
+		
+		# Thanh tiến độ làm bài (Optional visual)
+		st.caption(f" Bộ câu hỏi gồm {total} câu .")
+
+		for i, q in enumerate(st.session_state.quiz_data, 1):
+			with st.container():
+				st.markdown(f"""
+				<div class="quiz-card">
+					<div class="quiz-question">Câu {i}: {q.get('question')}</div>
+				</div>
+				""", unsafe_allow_html=True)
+				
+				options = q.get('options', {})
+				opt_list = []
+				if isinstance(options, dict):
+					 opt_list = [f"{k}. {v}" for k, v in options.items()]
+				
+				# Unique key mỗi lần sinh đề mới -> reset lựa chọn cũ
+				# Dùng timestamp hoặc hash của câu hỏi để làm key
+				unique_key = f"q_{hash(q.get('question'))}"
+				
+				user_choice = st.radio(f"Chọn đáp án câu {i}:", opt_list, key=unique_key, index=None)
+				
+				if user_choice:
+					selected_opt = user_choice.split(".")[0].strip().upper()
+					correct_opt = q.get('correct_answer', '').strip().upper()
+					
+					if selected_opt == correct_opt:
+						st.markdown(f"<div class='right-msg'>✅ Chính xác.</div>", unsafe_allow_html=True)
+						score += 1
+					else:
+						st.markdown(f"<div class='wrong-msg'>❌ Sai. Đáp án là {correct_opt}</div>", unsafe_allow_html=True)
+					
+					with st.expander(" Xem giải thích"):
+						st.info(f"{q.get('explanation')}")
+						st.caption(f"📚 {q.get('citation')}")
+				
+				st.markdown("---")
