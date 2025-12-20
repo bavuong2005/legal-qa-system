@@ -216,10 +216,10 @@ tab_chat, tab_quiz = st.tabs(["💬 Hỏi Đáp Luật", "📝 Tạo Đề Thi T
 
 with tab_chat:
 
-	# Biến tạm để lưu input
+	# 1. KHỞI TẠO BIẾN
 	user_input = None
-
-	# Hiển thị câu hỏi mẫu nếu chưa có tin nhắn
+	
+	# 2. XỬ LÝ NÚT BẤM CÂU HỎI MẪU (Nằm trên cùng)
 	sample_questions = [
 		"Kết cấu hạ tầng đường bộ bao gồm những gì?",
 		"Người đi xe dàn hàng ba bị xử phạt như thế nào?",
@@ -227,6 +227,7 @@ with tab_chat:
 		"Xe máy chở 2 người trở lên có bị phạt không?",
 	]
 
+	# Chỉ hiển thị gợi ý khi chưa có tin nhắn nào
 	if len(st.session_state.messages) == 0:
 		st.markdown("""
 		<div style='text-align: center; margin: 2rem 0;'>
@@ -237,29 +238,21 @@ with tab_chat:
 		col1, col2 = st.columns(2)
 		for idx, question in enumerate(sample_questions):
 			with col1 if idx % 2 == 0 else col2:
+				# Nếu bấm nút -> Gán giá trị vào user_input ngay lập tức
 				if st.button(f"💡 {question}", key=f"sample_{idx}", use_container_width=True):
 					user_input = question
 
-	# Chat input
-	chat_input = st.chat_input("Nhập câu hỏi của bạn...")
-	if chat_input:
-		user_input = chat_input.strip()
-
-	# Display messages
+	# 3. HIỂN THỊ LỊCH SỬ TIN NHẮN (MESSAGE LOOP)
 	for idx, message in enumerate(st.session_state.messages):
 		if message["role"] == "user":
-			# Xử lý text: loại bỏ khoảng trắng thừa ở đầu/cuối mỗi dòng, loại bỏ dòng trống và escape HTML
 			user_text = message['content'].strip()
-			# Loại bỏ khoảng trắng thừa ở đầu/cuối mỗi dòng và bỏ dòng trống
 			user_text = '\n'.join(line.strip() for line in user_text.split('\n') if line.strip())
 			user_text = user_text.replace('<', '&lt;').replace('>', '&gt;')
-			# Chuyển newline thành <br> để hiển thị đúng
 			user_text = user_text.replace('\n', '<br>')
 			st.markdown(f'<div style="text-align: right;"><div class="user-message">{user_text}</div></div>', unsafe_allow_html=True)
 		else:
 			with st.container():
 				st.markdown('<div class="bot-response-container">', unsafe_allow_html=True)
-				
 				st.markdown(f"""
 					<div class="bot-message">
 						<span class="bot-icon">⚖️</span>
@@ -284,26 +277,17 @@ with tab_chat:
 						<span class="metric-inline">📄 {m['chunks']} chunks</span>
 					</div>
 					""", unsafe_allow_html=True)
-				
 				st.markdown('</div>', unsafe_allow_html=True)
 		
 		st.markdown("<br>", unsafe_allow_html=True)
 
-	# Handle RAG logic
-	if user_input and not st.session_state.running_rag:
-		st.session_state.running_rag = True 
-		st.session_state.messages.append({
-			"role": "user",
-			"content": user_input.strip()
-		})
-		st.rerun()
-
+	# 4. LOGIC XỬ LÝ RAG (ĐƯA LÊN TRƯỚC INPUT)
+	# Phần này sẽ hiển thị Spinner ngay sau tin nhắn cuối cùng, TRƯỚC khi vẽ thanh input
 	if st.session_state.messages and st.session_state.messages[-1]["role"] == "user" and st.session_state.running_rag:
 		last_user_question = st.session_state.messages[-1]["content"]
 		
 		with st.spinner("Đang suy nghĩ..."):
 			start_time = time.time()
-			
 			try:
 				t0 = time.time()
 				context, sources = retrieve(last_user_question, k=k_value)
@@ -326,18 +310,31 @@ with tab_chat:
 						"chunks": len(sources)
 					}
 				})
-				
 			except Exception as e:
 				st.session_state.messages.append({
 					"role": "assistant",
 					"content": f"❌ Xin lỗi, đã xảy ra lỗi: {str(e)}"
 				})
 		
+		# Xử lý xong -> Tắt cờ chạy -> Rerun để hiển thị kết quả
 		st.session_state.running_rag = False
 		st.rerun()
-# ==========================================
-# TAB 2: QUIZ GENERATOR (TÍNH NĂNG MỚI)
-# ==========================================
+
+	# 5. THANH NHẬP LIỆU (ĐỂ CUỐI CÙNG)
+	# Vì để cuối cùng, nó sẽ luôn được vẽ ở dưới đáy, sau Spinner
+	chat_input = st.chat_input("Nhập câu hỏi của bạn...")
+	if chat_input:
+		user_input = chat_input.strip()
+
+	# 6. KÍCH HOẠT QUÁ TRÌNH XỬ LÝ (NẾU CÓ INPUT MỚI)
+	# Logic này chỉ chạy để set trạng thái, sau đó rerun ngay
+	if user_input and not st.session_state.running_rag:
+		st.session_state.running_rag = True 
+		st.session_state.messages.append({
+			"role": "user",
+			"content": user_input.strip()
+		})
+		st.rerun()
 # ==========================================
 # TAB 2: QUIZ GENERATOR (CÓ RANDOM MODE)
 # ==========================================
@@ -347,7 +344,8 @@ with tab_quiz:
 	# 1. Chọn chế độ
 	quiz_mode = st.radio("Chọn chế độ:", ["Theo chủ đề", "Ngẫu nhiên (Bộ 10 câu hỏi)"], horizontal=True)
 	
-	if quiz_mode == " Theo chủ đề":
+	if quiz_mode == "Theo chủ đề":
+		print("hi")
 		c_q1, c_q2 = st.columns([3, 1])
 		with c_q1:
 			topic_input = st.text_input("Nhập chủ đề:", placeholder="Ví dụ: Nồng độ cồn...", value=st.session_state.quiz_topic)
@@ -355,6 +353,7 @@ with tab_quiz:
 			num_q = st.number_input("Số câu:", 1, 10, 3)
 		btn_label = " Tạo Bộ Câu Hỏi"
 	else:
+		print(quiz_mode)
 		# Chế độ Random
 		st.info("Hệ thống sẽ chọn ngẫu nhiên 10 câu hỏi từ toàn bộ bộ luật để bạn thử sức!")
 		topic_input = "Random" # Giá trị giả
@@ -399,7 +398,6 @@ with tab_quiz:
 								if text: 
 									full_chunk = f"[Nguồn: {source}]\nNội dung: {text}"
 									context_list.append(full_chunk)
-
 						
 						full_ctx = "\n\n".join(context_list)
 						

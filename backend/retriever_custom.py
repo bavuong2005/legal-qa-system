@@ -59,7 +59,7 @@ emb_model = SentenceTransformer("Alibaba-NLP/gte-multilingual-base", device="cud
 print("✓ Embedding model loaded")
 
 print("🔹 Loading reranker model...")
-reranker = CrossEncoder("BAAI/bge-reranker-v2-m3", device="cuda")
+reranker = CrossEncoder("BAAI/bge-reranker-v2-m3", device="cpu")
 print("✓ Reranker loaded")
 
 print("🌐 Connecting to Weaviate...")
@@ -320,6 +320,9 @@ def retrieve(question: str, k: int = 5, raw: bool = False):
     return context, sources
 def retrieve_random(k: int = 10):
     """
+
+    Function for generating random questions 
+
     Lấy ngẫu nhiên k đoạn văn bản luật từ Database.
     Kỹ thuật: Tạo một vector ngẫu nhiên và tìm kiếm theo vector đó.
     """
