@@ -216,6 +216,7 @@ tab_chat, tab_quiz = st.tabs(["💬 Hỏi Đáp Luật", "📝 Tạo Đề Thi T
 
 with tab_chat:
 
+<<<<<<< HEAD
 	# 1. KHỞI TẠO BIẾN
 	user_input = None
 	
@@ -335,6 +336,7 @@ with tab_chat:
 			"content": user_input.strip()
 		})
 		st.rerun()
+
 # ==========================================
 # TAB 2: QUIZ GENERATOR (CÓ RANDOM MODE)
 # ==========================================
