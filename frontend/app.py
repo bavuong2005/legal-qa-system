@@ -216,7 +216,6 @@ tab_chat, tab_quiz = st.tabs(["💬 Hỏi Đáp Luật", "📝 Tạo Đề Thi T
 
 with tab_chat:
 
-<<<<<<< HEAD
 	# 1. KHỞI TẠO BIẾN
 	user_input = None
 	
@@ -347,7 +346,6 @@ with tab_quiz:
 	quiz_mode = st.radio("Chọn chế độ:", ["Theo chủ đề", "Ngẫu nhiên (Bộ 10 câu hỏi)"], horizontal=True)
 	
 	if quiz_mode == "Theo chủ đề":
-		print("hi")
 		c_q1, c_q2 = st.columns([3, 1])
 		with c_q1:
 			topic_input = st.text_input("Nhập chủ đề:", placeholder="Ví dụ: Nồng độ cồn...", value=st.session_state.quiz_topic)
@@ -355,8 +353,7 @@ with tab_quiz:
 			num_q = st.number_input("Số câu:", 1, 10, 3)
 		btn_label = " Tạo Bộ Câu Hỏi"
 	else:
-		print(quiz_mode)
-		# Chế độ Random
+			# Chế độ Random
 		st.info("Hệ thống sẽ chọn ngẫu nhiên 10 câu hỏi từ toàn bộ bộ luật để bạn thử sức!")
 		topic_input = "Random" # Giá trị giả
 		num_q = 10
@@ -369,13 +366,13 @@ with tab_quiz:
 		st.session_state.quiz_data = None
 		
 		# Kiểm tra input nếu ở chế độ Topic
-		if quiz_mode == " Theo chủ đề" and not topic_input:
+		if quiz_mode == "Theo chủ đề" and not topic_input:
 			st.warning("Vui lòng nhập chủ đề!")
 		else:
 			with st.status("Đang khởi tạo đề thi...", expanded=True) as status:
 				try:
 					# --- LOGIC TÌM KIẾM ---
-					if quiz_mode == " Theo chủ đề":
+					if quiz_mode == "Theo chủ đề":
 						status.write(f" Đang tìm luật về '{topic_input}'...")
 						relevant_chunks = retrieve(topic_input, k=5, raw=True)
 					else:
