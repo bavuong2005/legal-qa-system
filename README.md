@@ -1,17 +1,21 @@
 # RoadLawQA - Vietnamese Law QA System
 
-Hệ thống hỏi đáp pháp luật giao thông đường bộ Việt Nam sử dụng RAG (Retrieval-Augmented Generation).
+## 🎬 Demo
 
-## 📋 Tổng quan
+![Demo](https://raw.githubusercontent.com/bavuong2005/legal-qa-system/refs/heads/main/demo.gif)
 
-System này kết hợp:
-- **BM25 + pyvi**: Keyword search với Vietnamese tokenization
-- **Dense Retrieval**: Semantic search với Alibaba-NLP/gte-multilingual-base
-- **Hybrid Search**: Dynamic alpha tuning dựa trên query pattern
+A question-answering system for Vietnamese road traffic law using RAG (Retrieval-Augmented Generation).
+
+## 📋 Overview
+
+This system combines:
+- **BM25 + pyvi**: Keyword search with Vietnamese tokenization
+- **Dense Retrieval**: Semantic search with Alibaba-NLP/gte-multilingual-base
+- **Hybrid Search**: Dynamic alpha tuning based on query pattern
 - **Reranking**: BAAI/bge-reranker-v2-m3 cross-encoder
-- **Generation**: Gemini 2.5 Flash cho câu trả lời tiếng Việt
+- **Generation**: Gemini 2.5 Flash for Vietnamese answers
 
-## 🏗️ Kiến trúc
+## 🏗️ Architecture
 
 ```
           ┌─────────────┐
@@ -63,56 +67,57 @@ System này kết hợp:
 
 ```bash
 pip install -r requirements.txt
-```
+````
 
 ### 2. Environment Variables
 
-Tạo file `.env`:
+Create a `.env` file:
 
 ```bash
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-### 3. Khởi động Weaviate
+### 3. Start Weaviate
 
 ```bash
 docker-compose up -d
 ```
 
-### 4. Chuẩn bị dữ liệu
+### 4. Prepare data
 
-Đặt các file văn bản luật vào `data/raw/`:
-- `nghidinhso-168-2024-NĐ-CP.txt`
-- `luatso-36-2024-QH15.txt`
-- `luatso-35-2024-QH15.txt`
+Place legal text files into `data/raw/`:
 
-### 5. Xử lý dữ liệu & Build Index
+* `nghidinhso-168-2024-NĐ-CP.txt`
+* `luatso-36-2024-QH15.txt`
+* `luatso-35-2024-QH15.txt`
+
+### 5. Process data & Build Index
 
 ```bash
 cd backend
 
-# Bước 1: Chunk văn bản luật
+# Step 1: Chunk legal documents
 python clean_and_split.py
 
-# Bước 2: Build Weaviate index
+# Step 2: Build Weaviate index
 python build_index.py
 ```
 
-### 6. Chạy ứng dụng
+### 6. Run the application
 
 ```bash
 # Frontend (Recommended) - Streamlit Web UI
 cd frontend
 streamlit run app.py
 
-# Hoặc CLI - Command line interface
+# Or CLI - Command line interface
 cd backend
 python rag_qa.py
 ```
 
-## 💬 Sử dụng
+## 💬 Usage
 
-### Chạy Frontend (Web UI - Streamlit) - Recommended ⭐
+### Run Frontend (Web UI - Streamlit) - Recommended ⭐
 
 ```bash
 cd frontend
@@ -120,22 +125,23 @@ streamlit run app.py
 ```
 
 **Features:**
-- ✨ Welcome screen với giới thiệu và 3 ảnh minh họa
-- 💬 Chat interface hiện đại với streaming text
-- 📚 Source attribution (xem nguồn pháp luật tham khảo)
-- ⏱️ Performance metrics (retrieval + generation time)
-- 💡 Sample questions để bắt đầu nhanh
-- 🎚️ Settings sidebar: điều chỉnh số chunks, xóa lịch sử
-- 📊 Hiển thị metrics: thời gian xử lý, số chunks sử dụng
 
-### Chạy CLI (Command Line)
+* ✨ Welcome screen with introduction and 3 illustrative images
+* 💬 Modern chat interface with streaming text
+* 📚 Source attribution (view referenced legal sources)
+* ⏱️ Performance metrics (retrieval + generation time)
+* 💡 Sample questions to get started quickly
+* 🎚️ Settings sidebar: adjust number of chunks, clear history
+* 📊 Display metrics: processing time, number of chunks used
+
+### Run CLI (Command Line)
 
 ```bash
 cd backend
 python rag_qa.py
 ```
 
-Hoặc trong Python:
+Or in Python:
 
 ```python
 from retriever_custom import retrieve
@@ -152,7 +158,7 @@ answer, sources = generate_answer(question, context, sources)
 print(answer)
 ```
 
-Hoặc đơn giản hơn:
+Or simpler:
 
 ```python
 from rag_qa import ask_law
@@ -170,88 +176,85 @@ cd backend
 python test_retriever.py
 ```
 
-## 📊 Pipeline Chi tiết
+## 📊 Detailed Pipeline
 
 ### 1. Data Processing (`clean_and_split.py`)
 
-- **Input**: Raw text files (.txt)
-- **Output**: Structured JSON chunks (`data/processed/`)
-- **Process**:
-  - Hierarchical chunking: Điều → Khoản → Điểm → Bullet
-  - Full context enrichment với tags `[CHAPTER]`, `[ARTICLE]`, `[CLAUSE]`, `[POINT]`
-  - Sliding window cho chunks dài (max 1500 tokens)
+* **Input**: Raw text files (.txt)
+* **Output**: Structured JSON chunks (`data/processed/`)
+* **Process**:
+
+  * Hierarchical chunking: Điều → Khoản → Điểm → Bullet
+  * Full context enrichment with tags `[CHAPTER]`, `[ARTICLE]`, `[CLAUSE]`, `[POINT]`
+  * Sliding window for long chunks (max 1500 tokens)
 
 ### 2. Indexing (`build_index.py`)
 
-- **Vector Database**: Weaviate
-- **Embedding Model**: Alibaba-NLP/gte-multilingual-base
-- **Schema**:
-  - BM25 fields: `article_no`, `article_title`, `clause_no`, `point`, `clause_head`, `text`
-  - Vector field: từ `enriched_text`
-  - Display fields: `display_citation`, `header`, `path_text`
+* **Vector Database**: Weaviate
+* **Embedding Model**: Alibaba-NLP/gte-multilingual-base
+* **Schema**:
+
+  * BM25 fields: `article_no`, `article_title`, `clause_no`, `point`, `clause_head`, `text`
+  * Vector field: from `enriched_text`
+  * Display fields: `display_citation`, `header`, `path_text`
 
 ### 3. Retrieval (`retriever_custom.py`)
 
 #### BM25 Retrieval
-- Tokenization: pyvi (Vietnamese word segmentation)
-- Fields: article_no + article_title + clause_no + point + clause_head + text
+
+* Tokenization: pyvi (Vietnamese word segmentation)
+* Fields: article_no + article_title + clause_no + point + clause_head + text
 
 #### Dense Retrieval
-- Model: Alibaba-NLP/gte-multilingual-base
-- Input: `enriched_text` (full context với tags)
+
+* Model: Alibaba-NLP/gte-multilingual-base
+* Input: `enriched_text` (full context with tags)
 
 #### Hybrid Search
-- Formula: `score = α × dense_score + (1-α) × bm25_score`
-- Dynamic alpha tuning:
-  - Query có "Điều X", "Khoản Y" → α = 0.30 (favor BM25)
-  - Query có số liệu (km/h, triệu đồng) → α = 0.40
-  - Query semantic → α = 0.75 (favor dense)
+
+* Formula: `score = α × dense_score + (1-α) × bm25_score`
+* Dynamic alpha tuning:
+
+  * Query with "Điều X", "Khoản Y" → α = 0.30 (favor BM25)
+  * Query with numbers (km/h, triệu đồng) → α = 0.40
+  * Semantic query → α = 0.75 (favor dense)
 
 #### Reranking
-- Model: BAAI/bge-reranker-v2-m3
-- Top 20 candidates → Top 5 final results
+
+* Model: BAAI/bge-reranker-v2-m3
+* Top 20 candidates → Top 5 final results
 
 ### 4. Generation (`generator.py`)
 
-- **Model**: Gemini 2.5 Flash
-- **Prompt Strategy**:
-  - System instruction: Quy tắc trả lời chính xác, không bịa
-  - Context: Top 5 chunks với citation `[Căn cứ: ...]`
-  - Output format: Trả lời + "Căn cứ pháp lý: ..."
+* **Model**: Gemini 2.5 Flash
+* **Prompt Strategy**:
+
+  * System instruction: rules for accurate answers, no hallucination
+  * Context: Top 5 chunks with citation `[Căn cứ: ...]`
+  * Output format: Answer + "Legal basis: ..."
 
 ## 🎯 Features
 
- **Hierarchical Chunking**: Cấu trúc Điều → Khoản → Điểm
+* **Hierarchical Chunking**: Article → Clause → Point structure
+* **Context Enrichment**: Full context with tags for embedding
+* **Vietnamese Tokenization**: pyvi for BM25
+* **Dynamic Alpha Tuning**: Automatically adjusts based on query pattern
+* **Cross-Encoder Reranking**: High accuracy
+* **Citation Tracking**: Clearly shows legal basis
+* **Gemini Integration**: Vietnamese legal answer generation
+* **Modern Web UI**: Streamlit chat interface with streaming
+* **Source Attribution**: View references in Expander
+* **Performance Metrics**: Display retrieval/generation time
+* **Sample Questions**: Suggested queries
+* **Adjustable Settings**: Control number of chunks, clear history
 
- **Context Enrichment**: Full context với tags cho embedding
-
- **Vietnamese Tokenization**: pyvi cho BM25
-
- **Dynamic Alpha Tuning**: Tự động điều chỉnh theo query pattern
-
- **Cross-Encoder Reranking**: Độ chính xác cao
-
- **Citation Tracking**: Ghi rõ căn cứ pháp lý
-
- **Gemini Integration**: Vietnamese legal answer generation
-
- **Modern Web UI**: Streamlit chat interface với streaming
-
- **Source Attribution**: Xem nguồn tham khảo trong Expander
-
- **Performance Metrics**: Hiển thị thời gian retrieval/generation
-
- **Sample Questions**: Gợi ý câu hỏi mẫu
-
- **Adjustable Settings**: Điều chỉnh số chunks, xóa lịch sử
-
-## 📂 Cấu trúc Project
+## 📂 Project Structure
 
 ```
 legal-qa-system/
 ├── frontend/                   # Streamlit Web UI
 │   ├── app.py                 # Main chat interface
-│   ├── assets/                # Hình ảnh minh họa
+│   ├── assets/                # Illustration images
 │   │   ├── law.png
 │   │   ├── traffic.png
 │   │   └── legal.png
@@ -274,6 +277,7 @@ legal-qa-system/
 │
 ├── requirements.txt           # Python dependencies
 ├── .env                       # API keys (create this)
+├── demo.gif                   # Quick review
 └── README.md
 ```
 
@@ -306,12 +310,13 @@ WIN_TOK = 900
 OVERLAP_TOK = 300
 ```
 
-## 📝 Văn bản pháp luật
+## 📝 Legal Documents
 
-Hệ thống hỗ trợ:
-- Nghị định số 168/2024/NĐ-CP (Xử phạt vi phạm giao thông)
-- Luật số 36/2024/QH15 (Trật tự an toàn giao thông đường bộ)
-- Luật số 35/2024/QH15 (Đường bộ)
+The system supports:
+
+* Nghị định số 168/2024/NĐ-CP (Traffic violation penalties)
+* Luật số 36/2024/QH15 (Road traffic order and safety)
+* Luật số 35/2024/QH15 (Roads)
 
 ## 🧪 Testing
 
@@ -325,29 +330,32 @@ python rag_qa.py
 
 ## 🐛 Troubleshooting
 
-### Weaviate không kết nối được
+### Cannot connect to Weaviate
+
 ```bash
 docker-compose down
 docker-compose up -d
 docker ps  # Check container running
 ```
 
-### BM25 index bị lỗi
+### BM25 index error
+
 ```bash
 rm bm25_index.pkl
 python clean_and_split.py  # Rebuild
 ```
 
 ### Out of memory
-- Giảm `INITIAL_K` trong retriever
-- Giảm batch size trong build_index.py
+
+* Reduce `INITIAL_K` in retriever
+* Reduce batch size in build_index.py
 
 ## 📚 References
 
-- [Weaviate Documentation](https://weaviate.io/developers/weaviate)
-- [Gemini API](https://ai.google.dev/gemini-api/docs)
-- [gte-multilingual-base](https://huggingface.co/Alibaba-NLP/gte-multilingual-base)
-- [bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3)
+* [https://weaviate.io/developers/weaviate](https://weaviate.io/developers/weaviate)
+* [https://ai.google.dev/gemini-api/docs](https://ai.google.dev/gemini-api/docs)
+* [https://huggingface.co/Alibaba-NLP/gte-multilingual-base](https://huggingface.co/Alibaba-NLP/gte-multilingual-base)
+* [https://huggingface.co/BAAI/bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3)
 
 ## 📄 License
 
