@@ -352,10 +352,10 @@ python clean_and_split.py  # Rebuild
 
 ## 📚 References
 
-* [https://weaviate.io/developers/weaviate](https://weaviate.io/developers/weaviate)
-* [https://ai.google.dev/gemini-api/docs](https://ai.google.dev/gemini-api/docs)
-* [https://huggingface.co/Alibaba-NLP/gte-multilingual-base](https://huggingface.co/Alibaba-NLP/gte-multilingual-base)
-* [https://huggingface.co/BAAI/bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3)
+- [Weaviate Documentation](https://weaviate.io/developers/weaviate)
+- [Gemini API](https://ai.google.dev/gemini-api/docs)
+- [gte-multilingual-base](https://huggingface.co/Alibaba-NLP/gte-multilingual-base)
+- [bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3)
 
 ## 📄 License
 
